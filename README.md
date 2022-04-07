@@ -1,2 +1,3 @@
-# fast_fva
-Fast Flux Variability Analysis
+# FasterFVA
+
+A fast implimentation of Variable Flux Analysis.
