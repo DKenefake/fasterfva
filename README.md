@@ -20,7 +20,7 @@ Here we apply it do different well known biological systems, with a mu factor of
 
 Run serially on a 12700K CPU
 
-| Model Name         | Me Time(sec) | Cobra Time(sec) | Ratio       |
+| Model Name         | Proposed Time(sec) | Cobra Time(sec) | Ratio       |
 |--------------------|--------------|-----------------|-------------|
 | iAB_RBC_283        |        0.353 |            0.46 | 1.303116147 |
 | iAF1260b           |        8.618 |         11.3319 | 1.314910652 |
