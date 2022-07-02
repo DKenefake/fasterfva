@@ -17,8 +17,8 @@ class FVAProblem:
         \min c^Tv
     .. math::
         \begin{align}
-        \text{s.t. } Sv &eq \hat{0}\\
-        v_l \leq v &= v_u\\
+        \text{s.t. } Sv &= 0\\
+        v_l \leq v &\leq v_u\\
         v &\in R^n\\
         \end{align}
 

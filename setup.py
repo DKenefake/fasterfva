@@ -24,6 +24,7 @@ setup(
         'test': ['pytest']
     },
     install_requires=["numpy",
+                      "scipy",
                       "gurobipy",],
     packages=find_packages(where='src'),
     package_dir={'': 'src'}
