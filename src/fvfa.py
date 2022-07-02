@@ -30,6 +30,7 @@ class FVAProblem:
     mu: float
 
     def __post_init__(self):
+        """Some clean-up, and error checking is done here"""
 
         # assure that v_u and v_l are flattened arrays
         self.v_l = self.v_l.flatten()
@@ -42,11 +43,27 @@ class FVAProblem:
 
     def is_valid_dims(self) -> bool:
         """
-        Checks the dimensions of the problem matrices.
+        Checks the dimensions of the FVA problem matrices.
 
         :return: False if not consistent dimensions, otherwise true
         """
-        # TODO: check the dimensions
+
+        num_lb = numpy.size(self.v_l)
+        num_ub = numpy.size(self.v_u)
+        num_c = numpy.size(self.c)
+
+        # check upper bounds and lower bounds
+        if num_lb != num_ub:
+            return False
+
+        # check the objective dims
+        if (num_lb != num_c) or (num_ub != num_c):
+            return False
+
+        # check the dims of the metabolic network matrix
+        if self.S.shape[1] != num_lb:
+            return False
+
         return True
 
     def is_valid_param(self) -> bool:
@@ -58,6 +75,10 @@ class FVAProblem:
 
 @dataclass
 class FVASolution:
+    """
+    The solution to FVAProblem instance. Contains the bounds of the fluxs, the best objective value, the number of
+    LPs needed to solve and the FVAProblem instance.
+    """
     lower_bound: numpy.array
     upper_bound: numpy.array
     Z: float
@@ -78,7 +99,7 @@ def build_fva_lp(problem: FVAProblem) -> [gp.Model, gp.MVar]:
     # quite optimizer output
     model.setParam('OutputFlag', 0)
 
-    # setup the flux variable, v
+    # set up the flux variable, v
     v = model.addMVar(problem.num_v(), vtype=GRB.CONTINUOUS, lb=problem.v_l, ub=problem.v_u)
 
     # add flux network constraints
@@ -92,6 +113,11 @@ def build_fva_lp(problem: FVAProblem) -> [gp.Model, gp.MVar]:
 
 
 def setup_initial_fva_problem_solve(problem: FVAProblem) -> [gp.Model, gp.MVar, float]:
+    """
+    Sets up the initial LP model, solves for Z and adds the constraints
+
+    :returns: The LP model, the LP model variables, and Z
+    """
     # build the gurobi model relating to the FVA problem
 
     fva_model, flux_vars = build_fva_lp(problem)
@@ -136,6 +162,7 @@ def fva_solve_basic(problem: FVAProblem) -> Optional[FVASolution]:
     # build to solve the first step of the FVA problem
     fva_model, flux_vars, Z = setup_initial_fva_problem_solve(problem)
 
+    # instantiate the flux bounds and the LP counting
     lower_bound = numpy.zeros(problem.num_v())
     upper_bound = numpy.zeros(problem.num_v())
     number_lps = 1 + 2 * problem.num_v()
@@ -148,7 +175,7 @@ def fva_solve_basic(problem: FVAProblem) -> Optional[FVASolution]:
     return FVASolution(lower_bound, upper_bound, Z, number_lps, problem)
 
 
-def fva_faster_solve(problem: FVAProblem) -> Optional[FVASolution]:
+def fva_solve_faster(problem: FVAProblem) -> Optional[FVASolution]:
     """
     Solve the FVA problem with the proposed algorithm, note that the number of deterministic Linear programs will be smaller.
 
@@ -159,24 +186,28 @@ def fva_faster_solve(problem: FVAProblem) -> Optional[FVASolution]:
     # build the sovle the first step of the FVA problem
     fva_model, flux_vars, Z = setup_initial_fva_problem_solve(problem)
 
+    # set up problems to be solved
     upper_bound_problems = set(range(problem.num_v()))
     lower_bound_problems = set(range(problem.num_v()))
 
+    # instantiate the flux bounds and the LP counting
     lower_bound = numpy.empty(problem.num_v())
     lower_bound.fill(numpy.nan)
-
     upper_bound = numpy.empty(problem.num_v())
     upper_bound.fill(numpy.nan)
-
     number_lps = 1
 
+    # TODO: Clean this duplication up
+
     def remove_lower_bound_problems(v):
+        """Helper function to remove problems to solve from the lower bound"""
         problem_to_remove = numpy.where(v.X == problem.v_l)[0]
         for i in problem_to_remove:
             if i in lower_bound_problems:
                 lower_bound_problems.remove(i)
 
     def remove_upper_bound_problems(v):
+        """Helper function to remove problem to solve from the upper bound"""
         problem_to_remove = numpy.where(v.X == problem.v_u)[0]
         for i in problem_to_remove:
             if i in upper_bound_problems:
