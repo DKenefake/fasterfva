@@ -35,6 +35,7 @@ This means for FVA analysis, many times when we are trying to determine the boun
 ### The Actual Algorithm
 
 Firstly, the optimal fluxes are solved to find the best maximizer for the biological imperative $Z = c^Tv$. This bound is the best that is achievable for this particular system.
+
 $$
 \Huge
 \begin{align}
