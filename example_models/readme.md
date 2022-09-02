@@ -1,6 +1,8 @@
-# Models
+# Benchmark and Plot Generation
 
-Some models have been included for ease of use.
+The Jupyter notebook titled ``BenchPlots.ipynb`` contain all of the benchmarks and plot generation use in ... 
+
+Some models have been included for ease of use. The full set of models used in ... can be found at ...
 
 
 ## Attribution

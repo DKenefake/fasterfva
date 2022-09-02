@@ -99,6 +99,9 @@ def build_fva_lp(problem: FVAProblem) -> [gp.Model, gp.MVar]:
     # quite optimizer output
     model.setParam('OutputFlag', 0)
 
+    # quite optimizer output
+    model.setParam('Method', 0)
+
     # set up the flux variable, v
     v = model.addMVar(problem.num_v(), vtype=GRB.CONTINUOUS, lb=problem.v_l, ub=problem.v_u)
 
@@ -146,7 +149,7 @@ def find_variable_range(model: gp.Model, flux_vars: gp.MVar, var_index: int, sen
     model.setObjective(flux_vars[var_index], sense=sense)
 
     model.optimize()
-    model.update()
+    # model.update()
 
     return model.getObjective().getValue()
 
@@ -174,6 +177,30 @@ def fva_solve_basic(problem: FVAProblem) -> Optional[FVASolution]:
 
     return FVASolution(lower_bound, upper_bound, Z, number_lps, problem)
 
+def fva_solve_basic_parallel(problem: FVAProblem) -> Optional[FVASolution]:
+    """
+    Solve the FVA problem with the standard algorithm
+
+    :param problem: A FVAProblem type
+    :return: Optionally None if the problem is not feasible, otherwise a FVASolution object
+    """
+
+    # build to solve the first step of the FVA problem
+    fva_model, flux_vars, Z = setup_initial_fva_problem_solve(problem)
+
+    # instantiate the flux bounds and the LP counting
+    lower_bound = numpy.zeros(problem.num_v())
+    upper_bound = numpy.zeros(problem.num_v())
+    number_lps = 1 + 2 * problem.num_v()
+
+    # solve the FVA sub problems
+    for index in range(problem.num_v()):
+        upper_bound[index] = find_variable_range(fva_model, flux_vars, index, GRB.MAXIMIZE)
+        lower_bound[index] = find_variable_range(fva_model, flux_vars, index, GRB.MINIMIZE)
+
+    return FVASolution(lower_bound, upper_bound, Z, number_lps, problem)
+
+
 
 def fva_solve_faster(problem: FVAProblem) -> Optional[FVASolution]:
     """
@@ -193,25 +220,21 @@ def fva_solve_faster(problem: FVAProblem) -> Optional[FVASolution]:
     # instantiate the flux bounds and the LP counting
     lower_bound = numpy.empty(problem.num_v())
     lower_bound.fill(numpy.nan)
+
     upper_bound = numpy.empty(problem.num_v())
     upper_bound.fill(numpy.nan)
+
     number_lps = 1
 
     # TODO: Clean this duplication up
 
-    def remove_lower_bound_problems(v):
+    def remove_bound_problems(v_val):
         """Helper function to remove problems to solve from the lower bound"""
-        problem_to_remove = numpy.where(v.X == problem.v_l)[0]
-        for i in problem_to_remove:
-            if i in lower_bound_problems:
-                lower_bound_problems.remove(i)
+        problem_to_remove = numpy.where(v_val == problem.v_l)[0]
+        lower_bound_problems.difference_update(set(problem_to_remove))
 
-    def remove_upper_bound_problems(v):
-        """Helper function to remove problem to solve from the upper bound"""
-        problem_to_remove = numpy.where(v.X == problem.v_u)[0]
-        for i in problem_to_remove:
-            if i in upper_bound_problems:
-                upper_bound_problems.remove(i)
+        problem_to_remove = numpy.where(v_val == problem.v_u)[0]
+        upper_bound_problems.difference_update(set(problem_to_remove))
 
     # solve the upper bound problems
     while len(upper_bound_problems) != 0:
@@ -222,8 +245,7 @@ def fva_solve_faster(problem: FVAProblem) -> Optional[FVASolution]:
         upper_bound[ub_problem] = find_variable_range(fva_model, flux_vars, ub_problem, GRB.MAXIMIZE)
         number_lps += 1
 
-        remove_upper_bound_problems(flux_vars)
-        remove_lower_bound_problems(flux_vars)
+        remove_bound_problems(flux_vars.X)
 
     # solve the lower bound problems
     while len(lower_bound_problems) != 0:
@@ -234,8 +256,7 @@ def fva_solve_faster(problem: FVAProblem) -> Optional[FVASolution]:
         lower_bound[lb_problem] = find_variable_range(fva_model, flux_vars, lb_problem, GRB.MINIMIZE)
         number_lps += 1
 
-        remove_upper_bound_problems(flux_vars)
-        remove_lower_bound_problems(flux_vars)
+        remove_bound_problems(flux_vars.X)
 
     # clean up where we reset all the bounds of the problem we pruned
     for index in range(problem.num_v()):

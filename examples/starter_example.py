@@ -18,7 +18,7 @@ def run_analysis(model_name: str = 'e_coli_core') -> int:
         stop = time.time()
         return stop - start, sol
 
-    problem = read_file_mat("..\\example_models", model_name)
+    problem = read_file_mat("..\\benchmark", model_name)
 
     time_basic, sol_basic = run_fva(fva_solve_basic, problem)
     time_faster, sol_faster = run_fva(fva_solve_faster, problem)
