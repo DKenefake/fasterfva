@@ -36,3 +36,20 @@ $$
         v &\in R^n
 \end{align}
 $$
+
+
+## Benchmark
+
+![image](https://github.com/DKenefake/fasterfva/blob/main/benchmark/LPcompare.png)
+
+## Citation
+
+Since a lot of time and effort has gone into FasterFVA's development, it would be greatly appreciated if you cite the following publication if you use this in your work.
+
+```
+@article{kenefake2022improved,
+  title={An Improved Algorithm for Flux Variability Analysis},
+  author={Kenefake, Dustin and Armingol, Erick and Lewis, Nathan E and Pistikopoulos, Efstratios N},
+  year={2022}
+}
+```
