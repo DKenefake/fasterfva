@@ -2,6 +2,8 @@
 
 This repository demonstrates a new Variable Flux Analysis (FVA) algorithm based on the properties of linear programming (LP) solutions. This simple insight allows for subproblems found in FVA analysis to be entirely removed. The idea of this refinement is based on the number of active constraints that must be 'active' at any solution of an LP. This reduction in the number of LPs reduces the total amount of computational effort required for FVA.
 
+The results and case studies are summarized in the following preprint, [An Improved Algorithm for Flux Variability Analysis](https://www.researchsquare.com/article/rs-2109496/v1).
+
 ## Algorithm Details
 
 ### The Intuition
