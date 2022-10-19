@@ -43,6 +43,7 @@ $$
 ## Benchmark
 
 ![image](https://github.com/DKenefake/fasterfva/blob/main/benchmark/LPcompare.png)
+![image](https://github.com/DKenefake/fasterfva/blob/main/benchmark/time_ratio.png)
 
 ## Citation
 
